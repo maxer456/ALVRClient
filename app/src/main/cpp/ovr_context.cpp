@@ -235,7 +235,8 @@ void OvrContext::setControllerInfo(TrackingInfo *packet, double displayTime) {
 
             ovrTracking tracking;
             if (vrapi_GetInputTrackingState(Ovr, remoteCapabilities.Header.DeviceID,
-                                            0, &tracking) != ovrSuccess) {
+                                            displayTime - 0.050, &tracking) != ovrSuccess) {
+
                 LOG("vrapi_GetInputTrackingState failed. Device was disconnected?");
             } else {
                 memcpy(&c.orientation,
