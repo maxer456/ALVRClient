@@ -21,6 +21,7 @@
 #include "packet_types.h"
 #include "udp.h"
 #include "asset.h"
+#include <inttypes.h>
 
 
 void OvrContext::initialize(JNIEnv *env, jobject activity, jobject assetManager, jobject vrThread,
@@ -235,28 +236,96 @@ void OvrContext::setControllerInfo(TrackingInfo *packet, double displayTime) {
 
             ovrTracking tracking;
             if (vrapi_GetInputTrackingState(Ovr, remoteCapabilities.Header.DeviceID,
-                                            displayTime - 0.050, &tracking) != ovrSuccess) {
+                                            0, &tracking) != ovrSuccess) {
 
                 LOG("vrapi_GetInputTrackingState failed. Device was disconnected?");
             } else {
+
+                //orientation
+                ovrQuatf quat =  toQuaternion(0.0,0.0, 36 * M_PI / 180);
+                ovrQuatf  orientation = quatMultipy(&tracking.HeadPose.Pose.Orientation, &quat);
+                tracking.HeadPose.Pose.Orientation = orientation;
+
                 memcpy(&c.orientation,
                        &tracking.HeadPose.Pose.Orientation,
                        sizeof(tracking.HeadPose.Pose.Orientation));
+
+
+                //position
+                ovrMatrix4f rotMatrix = ovrMatrix4f_CreateFromQuaternion(&orientation);
+                ovrVector4f offset;
+                offset.x = 0;
+                offset.y = 0;
+                offset.z = -0.053;
+                offset.w = 1;
+                ovrVector4f absOffset = ovrVector4f_MultiplyMatrix4f(&rotMatrix, &offset);
+
                 memcpy(&c.position,
                        &tracking.HeadPose.Pose.Position,
                        sizeof(tracking.HeadPose.Pose.Position));
+
+                c.position.x+= absOffset.x;
+                c.position.y+= absOffset.y;
+                c.position.z+= absOffset.z;
+
+
+
+                TrackingVector3 v;
+                v.x = 0;
+                v.y = 0;
+                v.z = 0;
+
+
+                //calculate new velocity
+                float timeS = ( (float)(packet->clientTime - lastStateTime) / (1000.0 * 1000.0));
+
+
+                //LOGI("Client time: %" PRIu64 " res: %f"  , (packet->clientTime - lastStateTime ), timeS );
+
+
+                ovrVector3f linearVelocity;
+                //linearVelocity.x = (lastControllerPos[deviceIndex].x - c.position.x) / timeS / 2.0 ;
+                //linearVelocity.y = (lastControllerPos[deviceIndex].y - c.position.y) / timeS / 2.0;
+                //linearVelocity.z = (lastControllerPos[deviceIndex].z - c.position.z) / timeS / 2.0;
+
+                linearVelocity.x = tracking.HeadPose.LinearVelocity.x ;
+                linearVelocity.y = tracking.HeadPose.LinearVelocity.y ;
+                linearVelocity.z = tracking.HeadPose.LinearVelocity.z ;
+
+
+              //  LOGI("Velocity %f -  %f - %f", linearVelocity.x, linearVelocity.y, linearVelocity.z);
+              //  LOGI("Velocity original:  %f -  %f - %f", tracking.HeadPose.LinearVelocity.x, tracking.HeadPose.LinearVelocity.y, tracking.HeadPose.LinearVelocity.z);
+
+
+                memcpy(&c.linearVelocity,
+                &tracking.HeadPose.LinearVelocity,
+                        sizeof(tracking.HeadPose.LinearVelocity));
+
+
                 memcpy(&c.angularVelocity,
                        &tracking.HeadPose.AngularVelocity,
                        sizeof(tracking.HeadPose.AngularVelocity));
-                memcpy(&c.linearVelocity,
-                       &tracking.HeadPose.LinearVelocity,
-                       sizeof(tracking.HeadPose.LinearVelocity));
+
+
+
                 memcpy(&c.angularAcceleration,
-                       &tracking.HeadPose.AngularAcceleration,
-                       sizeof(tracking.HeadPose.AngularAcceleration));
+                        &v,
+                        sizeof(v));
+
+
                 memcpy(&c.linearAcceleration,
-                       &tracking.HeadPose.LinearAcceleration,
-                       sizeof(tracking.HeadPose.LinearAcceleration));
+                        &v,
+                        sizeof(v));
+
+
+
+
+                memcpy(&lastControllerPos[deviceIndex],
+                       &c.position,
+                       sizeof(c.position));
+
+
+
             }
             controller++;
         } else if (curCaps.Type == ovrControllerType_Headset) {
@@ -320,6 +389,8 @@ void OvrContext::setControllerInfo(TrackingInfo *packet, double displayTime) {
             }
         }
     }
+
+    lastStateTime = packet->clientTime;
 }
 
 uint64_t OvrContext::mapButtons(ovrInputTrackedRemoteCapabilities *remoteCapabilities,

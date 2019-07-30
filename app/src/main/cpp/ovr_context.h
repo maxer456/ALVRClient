@@ -61,6 +61,9 @@ private:
 
     jobject mVrThread = nullptr;
 
+    ovrVector3f lastControllerPos[2];
+    uint64_t lastStateTime = 0;
+
     bool UseMultiview = true;
     GLuint SurfaceTextureID = 0;
     GLuint loadingTexture = 0;
