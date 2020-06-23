@@ -45,6 +45,10 @@ class ServerConnection extends ThreadBase
         void onTracking();
 
         void onHapticsFeedback(long startTime, float amplitude, float duration, float frequency, boolean hand);
+
+        void onGuardianSyncAck(long timestamp);
+
+        void onGuardianSegmentAck(long timestamp, int segmentIndex);
     }
 
     private ConnectionListener mConnectionListener;
@@ -258,6 +262,16 @@ class ServerConnection extends ThreadBase
     @SuppressWarnings("unused")
     public void onHapticsFeedback(long startTime, float amplitude, float duration, float frequency, boolean hand) {
         mConnectionListener.onHapticsFeedback(startTime, amplitude, duration, frequency, hand);
+    }
+
+    @SuppressWarnings("unused")
+    public void onGuardianSyncAck(long timestamp) {
+        mConnectionListener.onGuardianSyncAck(timestamp);
+    }
+
+    @SuppressWarnings("unused")
+    public void onGuardianSegmentAck(long timestamp, int segmentIndex) {
+        mConnectionListener.onGuardianSegmentAck(timestamp, segmentIndex);
     }
 
     @SuppressWarnings("unused")

@@ -54,11 +54,17 @@ public:
 
     void onHapticsFeedback(uint64_t startTime, float amplitude, float duration, float frequency, int hand);
 
+    void onGuardianSyncAck(uint64_t timestamp);
+
+    void onGuardianSegmentAck(uint64_t timestamp, uint32_t segmentIndex);
+
     bool getButtonDown();
 
     void setStreamMic(bool streamMic);
 
    void setFFRParams(int foveationMode, float foveationStrength, float foveationShape, float foveationVerticalOffset);
+
+    void sendGuardianInfo(JNIEnv *env_, jobject udpReceiverThread);
 
 private:
     ANativeWindow *window = NULL;
@@ -103,7 +109,13 @@ private:
 
     uint64_t FrameIndex = 0;
 
-
+    // Oculus guardian
+    bool m_ShouldSyncGuardian = false;
+    bool m_GuardianSyncing = false;
+    uint32_t m_AckedGuardianSegment = 0;
+    uint64_t m_GuardianTimestamp = 0;
+    uint32_t m_GuardianPointCount = 0;
+    ovrVector3f * m_GuardianPoints = nullptr;
 
 
     // For ARCore
@@ -163,6 +175,9 @@ private:
     void finishHapticsBuffer(ovrDeviceID DeviceID);
 
     void reflectExtraLatencyMode(bool always);
+
+    void markShouldSyncGuardian();
+    void prepareGuardianData();
 };
 
 #endif //ALVRCLIENT_VR_CONTEXT_H

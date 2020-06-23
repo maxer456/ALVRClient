@@ -56,6 +56,10 @@ public class OvrContext {
         sendMicDataNative(handle, serverConnection);
     }
 
+    public void sendGuardianInfo(ServerConnection serverConnection) {
+        sendGuardianInfoNative(handle, serverConnection);
+    }
+
     public void onChangeSettings(int suspend) {
         onChangeSettingsNative(handle, suspend);
     }
@@ -100,6 +104,14 @@ public class OvrContext {
         onHapticsFeedbackNative(handle, startTime, amplitude, duration, frequency, hand);
     }
 
+    public void onGuardianSyncAck(long timestamp) {
+        onGuardianSyncAckNative(handle, timestamp);
+    }
+
+    public void onGuardianSegmentAck(long timestamp, int segmentIndex) {
+        onGuardianSegmentAckNative(handle, timestamp, segmentIndex);
+    }
+
     public boolean getButtonDown() {
         return getButtonDownNative(handle);
     }
@@ -117,6 +129,7 @@ public class OvrContext {
     private native void renderLoadingNative(long handle);
     private native void sendTrackingInfoNative(long handle, ServerConnection serverConnection);
     private native void sendMicDataNative(long handle, ServerConnection serverConnection);
+    private native void sendGuardianInfoNative(long handle, ServerConnection serverConnection);
 
     private native void onChangeSettingsNative(long handle, int suspend);
 
@@ -132,6 +145,8 @@ public class OvrContext {
     private native void setStreamMicNative(long handle, boolean streamMic);
     private native void setFFRParamsNative(long handle, int foveationMode, float foveationStrength, float foveationShape, float foveationVerticalOffset);
     private native void onHapticsFeedbackNative(long handle, long startTime, float amplitude, float duration, float frequency, boolean hand);
+    private native void onGuardianSyncAckNative(long handle, long timestamp);
+    private native void onGuardianSegmentAckNative(long handle, long timestamp, int segmentIndex);
 
     private native boolean getButtonDownNative(long handle);
 }
