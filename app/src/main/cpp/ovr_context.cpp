@@ -512,10 +512,7 @@ void OvrContext::sendTrackingInfo(JNIEnv *env_, jobject udpReceiverThread) {
     env_->CallVoidMethod(udpReceiverThread, mServerConnection_send, reinterpret_cast<jlong>(&info),
                          static_cast<jint>(sizeof(info)));
 
-
-
-
-
+    checkShouldSyncGuardian();
 }
 
 // Called TrackingThread. So, we can't use this->env.
@@ -610,7 +607,7 @@ void OvrContext::onResume() {
         ovr_Microphone_Start(mMicHandle);
     }
 
-    markShouldSyncGuardian();
+    checkShouldSyncGuardian();
 }
 
 void OvrContext::onPause() {
@@ -1188,7 +1185,7 @@ void OvrContext::sendGuardianInfo(JNIEnv *env_, jobject udpReceiverThread) {
         packet.timestamp = m_GuardianTimestamp;
         packet.totalPointCount = m_GuardianPointCount;
 
-        ovrPosef spacePose = vrapi_LocateTrackingSpace(Ovr, VRAPI_TRACKING_SPACE_LOCAL_FLOOR); // FLOOR tracking space? (LOCAL gives 0 position/rotation)
+        ovrPosef spacePose = vrapi_LocateTrackingSpace(Ovr, VRAPI_TRACKING_SPACE_LOCAL_FLOOR);
         memcpy(&packet.standingPosRotation, &spacePose.Orientation, sizeof(TrackingQuat));
         memcpy(&packet.standingPosPosition, &spacePose.Position, sizeof(TrackingVector3));
 
@@ -1241,13 +1238,20 @@ void OvrContext::onGuardianSegmentAck(uint64_t timestamp, uint32_t segmentIndex)
     }
 }
 
-void OvrContext::markShouldSyncGuardian() {
+void OvrContext::checkShouldSyncGuardian() {
+    int recenterCount = vrapi_GetSystemStatusInt(&java, VRAPI_SYS_STATUS_RECENTER_COUNT);
+    if (recenterCount <= m_LastHMDRecenterCount) {
+        return;
+    }
+
     m_ShouldSyncGuardian = true;
     m_GuardianSyncing = false;
     m_GuardianTimestamp = getTimestampUs();
     delete [] m_GuardianPoints;
     m_GuardianPoints = nullptr;
     m_AckedGuardianSegment = -1;
+
+    m_LastHMDRecenterCount = recenterCount;
 }
 
 void OvrContext::prepareGuardianData() {

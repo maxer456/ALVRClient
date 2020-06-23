@@ -110,9 +110,10 @@ private:
     uint64_t FrameIndex = 0;
 
     // Oculus guardian
+    int m_LastHMDRecenterCount = -1;
     bool m_ShouldSyncGuardian = false;
     bool m_GuardianSyncing = false;
-    uint32_t m_AckedGuardianSegment = 0;
+    uint32_t m_AckedGuardianSegment = -1;
     uint64_t m_GuardianTimestamp = 0;
     uint32_t m_GuardianPointCount = 0;
     ovrVector3f * m_GuardianPoints = nullptr;
@@ -176,7 +177,7 @@ private:
 
     void reflectExtraLatencyMode(bool always);
 
-    void markShouldSyncGuardian();
+    void checkShouldSyncGuardian();
     void prepareGuardianData();
 };
 
